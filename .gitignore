@@ -39,5 +39,4 @@ yarn-error.*
 # mine
 .vscode
 package-lock.json
-package-lock1.json
 .env
