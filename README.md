@@ -40,6 +40,7 @@ Open the app on an Android device using the Expo Go app or an emulator.
 ```
 wayfinder-app/
 ├── assets/             # App images and map files
+│   ├── html/           # Maps
 ├── src/                # Source code folder
 │   ├── components/     # UI components like MapView, SearchInput
 │   ├── screens/        # App screens (Home, Map, Details)
