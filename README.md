@@ -23,7 +23,7 @@
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/yourusername/wayfinder-app.git
+git clone https://github.com/shervin2004/wayFinder.git
 npm install
 ```
 

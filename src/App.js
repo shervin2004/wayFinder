@@ -1,87 +1,77 @@
-import { useRef, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Button, Text, View, Platform } from 'react-native';
-import { WebView } from 'react-native-webview';
+import React from 'react';
+import { GLView } from 'expo-gl';
+import * as THREE from 'three';
+import { Asset } from 'expo-asset';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 export default function App() {
+  const onContextCreate = async (gl) => {
+    const renderer = new THREE.WebGLRenderer({ context: gl });
+    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+    renderer.setClearColor(0x0000ff); // Blue background
 
-  //   const webviewRef = useRef(null);
-  //   const [pathIndex, setPathIndex] = useState(0);
-  //   const predefinedPath = [0, 2, 5, 1];
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      gl.drawingBufferWidth / gl.drawingBufferHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 5;
 
-  //   const uri = Platform.OS === 'android'
-  //     ? 'file:///android_asset/html/Wayfinding-Multi-path.html'
-  //     : require('./assets/html/Wayfinding-Multi-path.html');
+    // Fallback cube
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    );
+    scene.add(cube);
 
-  //   const sendMessageToWebView = (data) => {
-  //     webviewRef.current?.postMessage(JSON.stringify(data));
-  //   };
+    // Lighting
+    scene.add(new THREE.DirectionalLight(0xffffff, 0.8));
+    scene.add(new THREE.AmbientLight(0x404040));
 
-  //   const handleWebViewMessage = (event) => {
-  //     try {
-  //       const message = JSON.parse(event.nativeEvent.data);
-  //       console.log('Received from WebView:', message);
-  //       // You can handle acknowledgements or other data from the WebView here
-  //     } catch (error) {
-  //       console.log('Error parsing WebView message:', error);
-  //     }
-  //   };
+    // Load GLB
+    try {
+      const asset = Asset.fromModule(require('../assets/flat.glb'));
+      await asset.downloadAsync();
+      console.log('Asset URI:', asset.localUri);
+      const loader = new GLTFLoader();
+      loader.load(
+        asset.localUri,
+        (gltf) => {
+          console.log('GLB loaded:', gltf);
+          scene.add(gltf.scene);
+        },
+        undefined,
+        (error) => console.error('GLB error:', error)
+      );
+    } catch (error) {
+      console.error('Asset error:', error);
+    }
 
-  //   const moveBotToNextPoint = () => {
-  //     if (pathIndex < predefinedPath.length) {
-  //       const targetIndex = predefinedPath[pathIndex];
-  //       sendMessageToWebView({ command: 'moveBot', index: targetIndex });
-  //       setPathIndex(pathIndex + 1);
-  //     } else {
-  //       alert('Bot has completed the predefined path!');
-  //       setPathIndex(0); // Reset the path
-  //     }
-  //   };
+    const animate = () => {
+      requestAnimationFrame(animate);
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.01;
+      renderer.render(scene, camera);
+      gl.endFrameEXP();
+    };
+    animate();
+  };
 
-  //   const injectedJavaScript = `
-  //   (function() {
-  //     window.addEventListener('message', function(event) {
-  //       try {
-  //         const message = JSON.parse(event.data);
-  //         if (message.command === 'moveBot' && typeof move === 'function') {
-  //           console.log('WebView received moveBot command for index:', message.index);
-  //           move(message.index);
-  //           // Optionally, send a confirmation back to React Native
-  //           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'botMoved', index: message.index }));
-  //         }
-  //       } catch (error) {
-  //         console.error('WebView error handling message:', error);
-  //       }
-  //     });
-  //   })();
-  // `;
+  return <GLView style={{ flex: 1 }} onContextCreate={onContextCreate} />;
+}
 
-  //   return (
-  //     <View style={styles.container}>
-  //       <StatusBar hidden={true} />
-  //       <WebView
-  //         source={Platform.OS === 'android' ? { uri } : uri}
-  //         style={{ flex: 1 }}
-  //         ref={webviewRef}
-  //         onMessage={handleWebViewMessage}
-  //         injectedJavaScript={injectedJavaScript}
-  //       />
-  //       <Button style={{ position: 'relative', top: 30 }} title="Move Bot to Next Point" onPress={moveBotToNextPoint} />
-  //     </View>
-  //   );
-  return (
-    <View style={styles.container }>
-      <Text>HI</Text>
-    </View>
-  );
 
-};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+// import { View, Text } from 'react-native';
+// import styles from './styles/style';
+// import Map1 from './components/map';
+
+// export default function App() {
+//   return (
+//     <View style={styles.container}>
+//       <Map1 />
+//     </View>
+//   );
+// };
