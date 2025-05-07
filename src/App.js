@@ -1,15 +1,29 @@
-import React from 'react';
 import { GLView } from 'expo-gl';
-import * as THREE from 'three';
 import { Asset } from 'expo-asset';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import * as THREE from 'three';
 
 export default function App() {
   const onContextCreate = async (gl) => {
-    const renderer = new THREE.WebGLRenderer({ context: gl });
-    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
-    renderer.setClearColor(0x0000ff); // Blue background
+    console.log('GLView context created:', gl);
 
+    // Initialize renderer
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        context: gl,
+        antialias: true,
+        alpha: true
+      });
+      renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+      renderer.setClearColor(0x0000ff, 1.0); // Blue background
+      console.log('Renderer initialized:', renderer);
+    } catch (error) {
+      console.error('Renderer setup error:', error);
+      return;
+    }
+
+    // Scene and camera
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -18,48 +32,43 @@ export default function App() {
       1000
     );
     camera.position.z = 5;
+    console.log('Scene and camera set up');
 
-    // Fallback cube
+    // Add a red cube
     const cube = new THREE.Mesh(
       new THREE.BoxGeometry(1, 1, 1),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     );
     scene.add(cube);
+    console.log('Cube added to scene');
 
-    // Lighting
-    scene.add(new THREE.DirectionalLight(0xffffff, 0.8));
-    scene.add(new THREE.AmbientLight(0x404040));
-
-    // Load GLB
-    try {
-      const asset = Asset.fromModule(require('../assets/flat.glb'));
-      await asset.downloadAsync();
-      console.log('Asset URI:', asset.localUri);
-      const loader = new GLTFLoader();
-      loader.load(
-        asset.localUri,
-        (gltf) => {
-          console.log('GLB loaded:', gltf);
-          scene.add(gltf.scene);
-        },
-        undefined,
-        (error) => console.error('GLB error:', error)
-      );
-    } catch (error) {
-      console.error('Asset error:', error);
-    }
-
+    // Animation loop
     const animate = () => {
-      requestAnimationFrame(animate);
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-      renderer.render(scene, camera);
-      gl.endFrameEXP();
+      try {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        renderer.render(scene, camera);
+        gl.endFrameEXP();
+        console.log('Frame rendered');
+      } catch (error) {
+        console.error('Animation loop error:', error);
+      }
     };
     animate();
   };
 
-  return <GLView style={{ flex: 1 }} onContextCreate={onContextCreate} />;
+  const onError = (error) => {
+    console.error('GLView error:', error);
+  };
+
+  return (
+    <GLView
+      style={{ flex: 1 }}
+      onContextCreate={onContextCreate}
+      onError={onError}
+    />
+  );
 }
 
 
